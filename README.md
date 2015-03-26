@@ -1,8 +1,5 @@
 # 5th-proj
-
-5th year project.
-Monte Carlo code.
-		--------------------------------------
+            --------------------------------------
 		3D SCATTERED LIGHT CODE: POINT SOURCES
 		--------------------------------------
 
@@ -10,8 +7,8 @@ This directory contains the source codes for the 3D Cartesian grid. The code can
 
 The FORTRAN files are:
 
-	  density.f
-	  gridset.f
+        density.f
+        gridset.f
         iarray.f
         mcpolar.f
         ran2.f
