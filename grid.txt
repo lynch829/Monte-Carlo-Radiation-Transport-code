@@ -1,0 +1,6 @@
+      integer nxg,nyg,nzg
+
+      parameter(nxg=201,nyg=201,nzg=201)
+
+      real xface(nxg+1),yface(nyg+1),zface(nzg+1)
+      real rhokap(nxg,nyg,nzg)
