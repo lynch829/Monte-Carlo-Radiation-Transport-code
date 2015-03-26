@@ -1,7 +1,7 @@
 # 5th-proj
             --------------------------------------
-		3D SCATTERED LIGHT CODE: POINT SOURCES
-		--------------------------------------
+            3D SCATTERED LIGHT CODE: POINT SOURCES
+            --------------------------------------
 
 This directory contains the source codes for the 3D Cartesian grid. The code can be set up to simulate emission from an isotropic point source or other sources such as a gaussian beam or pencil beam. The density structure is set to be a uniform density sphere discretised into the 3D grid. The code outputs the 3D density grid as an unformatted file. At the end of the simulation the code outputs to the screen the average number of scatterings per Monte Carlo photon packet and outputs diffuse reflectance, transmission and depth resolved fluence.
 
