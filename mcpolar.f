@@ -7,7 +7,7 @@
 
 c***** Parameter declarations ****************************************
       integer nphotons,iseed,j,xcell,ycell,zcell,tflag,i,ph1,ph2,ph3
-      integer cnt,q,qz,numberrun,sflag
+      integer cnt,q,qz,numberrun,sflag,pflag
       real*8 nscatt
       real kappa,albedo,hgg,xmax,ymax,zmax,zpos,th,d
       real pi,twopi,fourpi,g2,delta,ydect,xdect,rdect,dectang
@@ -65,11 +65,11 @@ c***** Set up bins ***************************************************
 !      **** Cylindrical bins ****
 
       ! set # of bins for radial and vert direction
-      zbins=100
+      zbins=500
       rbins=500
       ! set size of bins
-      ddz=((2.*zmax)/zbins)
-      ddr=((2.*xmax)/rbins) 
+      ddz=((2.)/zbins)
+      ddr=((2.)/rbins) 
       ! allocate bin array based on # of bins     
       allocate(Amat(0:rbins-1,0:zbins))
       allocate(Az(0:zbins))
@@ -127,9 +127,10 @@ c***** Release photon from point source and drop weight if mismatched boundry **
      +          cost,sinp,cosp,phi,xmax,ymax,zmax,twopi,
      +            xcell,ycell,zcell,nxg,nyg,nzg,iseed)
 
-      call fresnel(sflag,sint,cost,n1,n2,zcur,
-     & ddr,ycur,weight,xmax,ymax,zmax,xp,yp,zp,xcur,
-     & Rr,rbins,Tr,twopi,tflag,sinp,cosp)
+            pflag=1
+
+      call fresnel(cost,n1,n2,sflag,weight,Rr,xp,yp,zcur,
+     +                   sint,zmax,rbins,Tr,ddr)
 
 c****** Find scattering location
           call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
@@ -270,7 +271,7 @@ c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence 
 !       do i=0,rbins-1
 !       write(25,*) (Amat(i,j),j=0,zbins)
 !       end do
-       open(26,file='fres-same-sur.dat')
+       open(26,file='fres-same-sur1.dat')
        do i=0,zbins
             do j=0,rbins-1
                   Az(i)=Az(i)+Amat(j,i)
@@ -286,12 +287,12 @@ c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence 
             open(18,file="rr.dat")
             open(19,file="Tr1.dat")
        do i=0,rbins-1
-            write(18,*) i,Rr(i)/(numberrun*twopi*ddr*ddr*(i+.5))
+            write(18,*) i,Rr(i)/(numberrun*twopi*ddr*ddr*(i-.5))
             write(19,*) i,Tr(i)/(numberrun*twopi*ddr*ddr*(i+.5))
             if(i.eq.rbins-1) then
                   j=rbins-1
             do while(j.ge.0)
-            write(18,*) -j,Rr(j)/(numberrun*twopi*ddr*ddr*(j+.5))
+            write(18,*) -j,Rr(j)/(numberrun*twopi*ddr*ddr*(j-.5))
             write(19,*) -j,Tr(j)/(numberrun*twopi*ddr*ddr*(j+.5))
                   j=j-1
             end do

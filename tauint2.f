@@ -1,5 +1,5 @@
       subroutine tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
-     +                  ,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
+     +               pflag,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
      +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
      +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
      +            weight,sint,n2,n1,cost,sflag,xcur,ycur,zcur,cosp,sinp)
@@ -13,25 +13,22 @@
       real xpos,ypos,zpos,tpos,flu,n1,n2,sint,cost,weight
       real ran2,pi,twopi
 
-      integer celli,cellj,cellk,rbins
+      integer celli,cellj,cellk,rbins,pflag
       real tau,taurun,taucell,d,d1,dcell,xcur,ycur,zcur,dsx,dsy,dsz
       real dx,dy,dz,smax,delta,ydect,xdect,rdect,dectang,th,cosp,sinp
       real Tr(0:rbins-1)
 c      real jmean(nxg,nyg,nzg)
 
 
-
+      if(pflag.eq.1) then
+      
+      else
+      
 c***** tflag=0 means photon is in envelope
       tflag=0
-!      dsx=0.
-!      dsy=0.
-!      dsz=0.
-!      dx=0.
-!      dy=0.
-!      dz=0.
 c**** generate random optical depth tau
       tau=-alog(ran2(iseed))
-
+      end if
 c***** set the cumulative distance and optical depth (d and taurun) 
 c***** along the photon path to zero.  set the current photon coordinates.
 c***** note that the origin of the (xcur,ycur,zcur) system is at the 
@@ -40,14 +37,15 @@ c***** bottom corner of the grid.
       xcur=xp+xmax
       ycur=yp+ymax
       zcur=zp+zmax
-345   continue      
+      
       celli=xcell
       cellj=ycell
       cellk=zcell 
         
-
-      if (cellk.lt.1 )cellk=1 
+345   continue
+!      if (cellk.lt.1 )cellk=1 
       d=0.
+
 c***** calculate smax -- maximum distance photon can travel
       if(nxp.gt.0.) then
          dsx=(2.*xmax-xcur)/nxp
@@ -208,46 +206,26 @@ c*************** Linear Grid ************************
 c****************************************************
 
           endif
-!      if(numberrun.gt.217703) print *, xcur,ycur,zcur,d
       end do
       
 c***** calculate photon final position.  if it escapes envelope then
 c***** set tflag=1.  if photon doesn't escape leave tflag=0 and update 
 c***** photon position.
-      if(ycur.gt..99999*2.*ymax) tflag=1
-      if(ycur.lt.1E-6) tflag=1
-      if(xcur.gt..99999*2.*xmax) tflag=1
-      if(xcur.lt.1E-6) tflag=1
-      if((d.ge.(.99999*smax))) then
-            d=smax
-            if(zcur.ge..9999999*(2*zmax).or.zcur.le.1e-8)then
-            if(zcur.lt.1E-8) then
-!            if(cost.lt.0.) print *, 90.-abs(180.*cost/3.14)
-            end if
-          call fresnel(sflag,sint,cost,n1,n2,zcur,
-     & ddr,ycur,weight,xmax,ymax,zmax,xp,yp,zp,xcur,
-     & Rr,rbins,Tr,twopi,tflag,sinp,cosp)
-     
-      cost=cos(pi-asin(sint))
-!      sint=(1.-cost*cost)
-!      if(sint.le.0) then
-!            sint=1.
-!      else
-!            sint=sqrt(sint)
-!      end if
-            xp=xcur-xmax
-            yp=ycur-ymax
-            zp=zcur-zmax
-     
-!            nxp=sint*cosp  
-!            nyp=sint*sinp   
-            nzp=cost
+!      if(numberrun.ge.955000) print *, numberrun,xcur,ycur,zcur
+      if((d.ge.(.9999999*smax))) then
+          if((xcur.ge..9999999**2.*xmax).or.(xcur.le.1.0E-7)) tflag=1
+          if((ycur.ge..9999999*2.*ymax).or.(ycur.le.1.0E-7)) tflag=1
+          if((zcur.ge..9999999*2.*zmax).or.(zcur.le.1.0E-7)) then
+            call fresnel(cost,n1,n2,sflag,weight,Rr,xp,yp,zcur,
+     +                   sint,zmax,rbins,Tr,ddr)
             
-            goto 345
-            else
-                  ! exits out a side, so ignore
-                 tflag=1
-            endif
+             nxp=sint*cosp
+             nyp=sint*sinp
+             nzp=cost
+             goto 345
+          else
+                  tflag=1
+          end if        
       else
          xp=xp+d*nxp
          yp=yp+d*nyp
@@ -255,6 +233,7 @@ c***** photon position.
          xcell=int(nxg*(xp+xmax)/(2.*xmax))+1
          ycell=int(nyg*(yp+ymax)/(2.*ymax))+1
          zcell=int(nzg*(zp+zmax)/(2.*zmax))+1
+         
          
       endif
 
