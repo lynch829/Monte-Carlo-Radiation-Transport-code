@@ -52,10 +52,14 @@ c****************** Calculate equatorial and polar optical depths ****
       print *,'taueq = ',taueq,'  taupole = ',taupole
       
 c************** Write out density grid as unformatted array
-      open(10,file='density.dat',status='unknown',
-     +        form='unformatted')
-           write(10) rhokap
-      close(10)
-
+!      open(10,file='density.dat',status='unknown',
+!     +        form='unformatted')
+!           write(10) rhokap
+!      close(10)
+!      open(11,file='slice.dat',status='unknown')
+!      do i = 1,nxg
+!        write(11,*) (rhokap(i,j,101), j=1,nyg)
+!      end do
+!      close(11)
       return
       end

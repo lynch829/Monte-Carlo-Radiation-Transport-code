@@ -2,5 +2,6 @@
 
       parameter(nxg=201,nyg=201,nzg=201)
 
-      real xface(nxg+1),yface(nyg+1),zface(nzg+1)
-      real rhokap(nxg,nyg,nzg)
+      real xface(nxg+3),yface(nyg+3),zface(nzg+3)
+      real rhokap(nxg+3,nyg+3,nzg+3)
+      real jmean(nxg+3,nyg+3,nzg+3)
