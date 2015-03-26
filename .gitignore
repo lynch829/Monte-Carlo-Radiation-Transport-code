@@ -1,6 +1,7 @@
-*.[o/]
+*.o
 *~
 *.dat
 *.png
 mcgrid
-
+pics/
+cvi\sdata/
