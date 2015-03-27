@@ -6,8 +6,8 @@
 
       include 'photon.txt'
 
-      integer xcell,ycell,zcell,nxg,nyg,nzg,iseed,i,cnt,j,nlow
-      real xmax,ymax,zmax,twopi,w,lam,phigauss,r1,flu
+      integer xcell,ycell,zcell,nxg,nyg,nzg,iseed
+      real xmax,ymax,zmax,twopi,w,phigauss,r1
       real ran
       real ran2
 
@@ -40,13 +40,14 @@ c**** emit photons in a pencil beam
 
       xp=0.
       yp=0.
-      zp=zmax-0.001
+      zp=zmax-1.E-7
 
 c***** Set photon direction cosines for direction of travel(into skin) *********
 
       phi=0.
       cosp=1.
       sinp=0.
+      sint=0.
       cost=-1.
 
       nxp=0.  
