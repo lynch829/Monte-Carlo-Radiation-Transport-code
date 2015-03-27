@@ -1,67 +1,63 @@
-      subroutine fresnel(cost,n1,n2,sflag,weight,Rr,xp,yp,zcur,
-     +                   sint,zmax,rbins,Tr,ddr)
+      subroutine fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,rflag
+     +            ,iseed,n1,n2,xp,yp,zp,xcur,ycur,Rr,ddr,weight
+     +            ,xmax,ymax,zmax,zcur,rbins,Tr)
       
       implicit none
-      
-      integer sflag,ir,rbins
-      real cost,n1,n2,crit,rf1,rf2,rft,weight,transmitted
-      real r,xp,yp,ddr,Rr(0:rbins-1),zcur,cost2,sint,zmax
-      real Tr(0:rbins-1),specref,costt
-      
-      
-      if(sflag.lt.1) then
-      
-!     do code for surface reflection
-      rft=((n2-n1)/(n1+n2))**2
-      specref=(1.-rft)*rft
-      weight=weight*rft
-      sflag=1
+
+      integer rflag,iseed,ir,rbins
+      real sint,cost,nxp,nyp,nzp,tir,theta1,theta2,sint2
+      real sinp,cosp,n1,n2,ran,ran2,xp,yp,xcur,ycur,ddr,weight
+      real zmax,ymax,xmax,zp,zcur,rp,Rr(0:rbins-1),Tr(0:rbins-1)
+
+
+      rflag=0
+
+c**** Internal reflection and refraction at upper boundary
+      if (sint.gt.n1/n2) then
+         rflag=1   ! critical angle, photon fresnel reflected
+
       else
-            crit = n2/n1
-            if(zcur.lt.1.0E-7) then
-!            print *, 'bot',cost
-            costt=cost
-            cost=abs(cost)
+         sint2=n2*sint
+         theta1=asin(sint)
+         theta2=asin(sint2)
+         tir=0.5*(  (sin(theta1-theta2))**2/(sin(theta1+theta2))**2 + 
+     +              (tan(theta1-theta2))**2/(tan(theta1+theta2))**2  )
+            ran=ran2(iseed)
+         if(ran.gt.tir ) then
+          xp=xcur-xmax
+              yp=ycur-ymax
+              zp=zcur-zmax
+              if(zcur.lt.1E-7) then
+              rp=sqrt(xp*xp+yp*yp)
+            ir=floor(rp/ddr)
+            if(ir.gt.rbins-1) ir=rbins-1
+            Tr(ir)=Tr(ir)+weight
+            weight=0.
+              else
+            rp=sqrt(xp*xp+yp*yp)
+            ir=floor(rp/ddr)
+            if(ir.gt.rbins-1) ir=rbins-1
+            Rr(ir)=Rr(ir)+weight
+            weight=0.
             end if
-            if(sint.gt.crit) then
-            
-!                 total internal reflection
-
+            sint=sint2                 !  photon refracted
+            cost=(1.-sint*sint)
+            if(cost.le.0.)then
+              cost=1.
             else
-            
-                  cost2=sqrt(1-(n1/n2*sint)**2)
-                  rf1=abs((n1*cost-n2*cost2)/(n1*cost+n2*cost2))**2
-                  rf2=abs((n1*cost2-n2*cost)/(n1*cost2+n2*cost))**2
-                  rft=0.5*(rf1+rf2)
-                  
-                  if(zcur.gt..99999*2.*zmax) then
-                  
-!                  top reflection
-!                        print *, cost
-                        transmitted=(1.-rft)*weight
-                        weight=weight*rft
-                        r=sqrt(xp*xp+yp*yp)
-                        ir=floor(r/ddr)
-                        Rr(ir)=Rr(ir) + transmitted
-                        cost=-cost
-                  
-                  else
-                  
-!                 bottom reflection                                          
-                  transmitted=(1.-rft)*weight
-                  weight=weight*rft
-                  r=sqrt(xp*xp+yp*yp)
-                  ir=floor(r/ddr)
-                  Tr(ir)=Tr(ir) + transmitted
-                  cost=-costt
-                  
-                  
+              cost=-sqrt(cost)
+            endif
 
-                  end if
-                  
-            end if
+            nxp=sint*cosp  
+            nyp=sint*sinp
+            nzp=cost
             
-      end if
+         elseif(ran.le.tir) then
+            rflag=1                    !  fresnel reflection
+
+         endif
+      endif
+
                     
       return
-      end subroutine fresnel
+      end

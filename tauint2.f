@@ -1,5 +1,5 @@
       subroutine tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
-     +               pflag,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
+     +              ,kappa,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
      +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
      +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
      +            weight,sint,n2,n1,cost,sflag,xcur,ycur,zcur,cosp,sinp)
@@ -10,25 +10,28 @@
 
       integer tflag,iseed,xcell,ycell,zcell,ph1,ph2,ph3,sflag,numberrun
       real xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,phi,ddr,Rr(0:rbins-1)
-      real xpos,ypos,zpos,tpos,flu,n1,n2,sint,cost,weight
-      real ran2,pi,twopi
+      real xpos,ypos,zpos,tpos,n1,n2,sint,cost,weight
+      real ran2,pi,twopi,kappa,taue
 
-      integer celli,cellj,cellk,rbins,pflag
+      integer celli,cellj,cellk,rbins,rflag,pflag
       real tau,taurun,taucell,d,d1,dcell,xcur,ycur,zcur,dsx,dsy,dsz
       real dx,dy,dz,smax,delta,ydect,xdect,rdect,dectang,th,cosp,sinp
       real Tr(0:rbins-1)
 c      real jmean(nxg,nyg,nzg)
 
-
-      if(pflag.eq.1) then
-      
-      else
-      
 c***** tflag=0 means photon is in envelope
       tflag=0
+      
+      if(pflag.eq.1) then
+      taue=kappa*2.*zmax
+      tau=-log(1-ran2(iseed)*(1-exp(-taue)))
+      else
+      
+
 c**** generate random optical depth tau
       tau=-alog(ran2(iseed))
       end if
+      
 c***** set the cumulative distance and optical depth (d and taurun) 
 c***** along the photon path to zero.  set the current photon coordinates.
 c***** note that the origin of the (xcur,ycur,zcur) system is at the 
@@ -43,7 +46,7 @@ c***** bottom corner of the grid.
       cellk=zcell 
         
 345   continue
-!      if (cellk.lt.1 )cellk=1 
+      if (cellk.lt.1 )cellk=1 
       d=0.
 
 c***** calculate smax -- maximum distance photon can travel
@@ -130,7 +133,7 @@ c*****the direction of travel to the next x-face, and likewise for dy and dz.
          elseif(nzp.lt.0.) then
             if (cellk.gt.nzg+3) then
             cellk=nzg+3
-            print *, 'cellk > 204'
+            print *, 'cellk > 204',zcur
             end if
             dz=(zface(cellk)-zcur)/nzp
             if(dz.lt.delta) then
@@ -198,7 +201,6 @@ c****************************************************
             ycur=ycur+dcell*nyp
             zcur=zcur+dcell*nzp
             jmean(celli,cellj,cellk) = jmean(celli,cellj,cellk) + dcell
-
 c*************** Linear Grid ************************
             celli=int(nxg*xcur/(2.*xmax))+1
             cellj=int(nyg*ycur/(2.*ymax))+1
@@ -215,14 +217,31 @@ c***** photon position.
       if((d.ge.(.9999999*smax))) then
           if((xcur.ge..9999999**2.*xmax).or.(xcur.le.1.0E-7)) tflag=1
           if((ycur.ge..9999999*2.*ymax).or.(ycur.le.1.0E-7)) tflag=1
-          if((zcur.ge..9999999*2.*zmax).or.(zcur.le.1.0E-7)) then
-            call fresnel(cost,n1,n2,sflag,weight,Rr,xp,yp,zcur,
-     +                   sint,zmax,rbins,Tr,ddr)
+!          if(zcur.le.1.0E-7) tflag=1
+          if((zcur.ge..9999999*2.*zmax).or.zcur.le.1.0E-7) then
+         call fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,rflag
+     +            ,iseed,n1,n2,xp,yp,zp,xcur,ycur,Rr,ddr,weight
+     +            ,xmax,ymax,zmax,zcur,rbins,Tr)
+
+            if(rflag.eq.1) then
+              xp=xcur-xmax
+              yp=ycur-ymax
+              zp=zcur-zmax
+
+              cost=cos(pi-asin(sint)) ! reflect photon
+              sint=(1.-cost*cost)
+              if(sint.le.0.)then
+                sint=0.
+              else
+                sint=sqrt(sint)
+              endif
+              nxp=sint*cosp  
+              nyp=sint*sinp
+              nzp=cost
+
+              goto 345
+            endif
             
-             nxp=sint*cosp
-             nyp=sint*sinp
-             nzp=cost
-             goto 345
           else
                   tflag=1
           end if        

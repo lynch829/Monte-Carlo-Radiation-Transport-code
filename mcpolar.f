@@ -7,7 +7,7 @@
 
 c***** Parameter declarations ****************************************
       integer nphotons,iseed,j,xcell,ycell,zcell,tflag,i,ph1,ph2,ph3
-      integer cnt,q,qz,numberrun,sflag,pflag
+      integer cnt,q,qz,numberrun,sflag,pflag,rflag
       real*8 nscatt
       real kappa,albedo,hgg,xmax,ymax,zmax,zpos,th,d
       real pi,twopi,fourpi,g2,delta,ydect,xdect,rdect,dectang
@@ -69,7 +69,7 @@ c***** Set up bins ***************************************************
       rbins=500
       ! set size of bins
       ddz=((2.)/zbins)
-      ddr=((2.)/rbins) 
+      ddr=((2.*zmax)/rbins) 
       ! allocate bin array based on # of bins     
       allocate(Amat(0:rbins-1,0:zbins))
       allocate(Az(0:zbins))
@@ -129,12 +129,13 @@ c***** Release photon from point source and drop weight if mismatched boundry **
 
             pflag=1
 
-      call fresnel(cost,n1,n2,sflag,weight,Rr,xp,yp,zcur,
-     +                   sint,zmax,rbins,Tr,ddr)
+      call fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,rflag
+     +            ,iseed,n1,n2,xp,yp,zp,xcur,ycur,Rr,ddr,weight
+     +            ,xmax,ymax,zmax,zcur,rbins,Tr)
 
 c****** Find scattering location
           call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
-     +                  ,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
+     +              ,kappa,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
      +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
      +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
      +            weight,sint,n2,n1,cost,sflag,xcur,ycur,zcur,cosp,sinp)
@@ -227,7 +228,7 @@ c************ drop weight
 
 c************ Find next scattering location
              call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
-     +                  ,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
+     +              ,kappa,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
      +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
      +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
      +            weight,sint,n2,n1,cost,sflag,xcur,ycur,zcur,cosp,sinp)
@@ -287,12 +288,12 @@ c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence 
             open(18,file="rr.dat")
             open(19,file="Tr1.dat")
        do i=0,rbins-1
-            write(18,*) i,Rr(i)/(numberrun*twopi*ddr*ddr*(i-.5))
+            write(18,*) i,Rr(i)/(numberrun*twopi*ddr*ddr*(i+.5))
             write(19,*) i,Tr(i)/(numberrun*twopi*ddr*ddr*(i+.5))
             if(i.eq.rbins-1) then
                   j=rbins-1
             do while(j.ge.0)
-            write(18,*) -j,Rr(j)/(numberrun*twopi*ddr*ddr*(j-.5))
+            write(18,*) -j,Rr(j)/(numberrun*twopi*ddr*ddr*(j+.5))
             write(19,*) -j,Tr(j)/(numberrun*twopi*ddr*ddr*(j+.5))
                   j=j-1
             end do
