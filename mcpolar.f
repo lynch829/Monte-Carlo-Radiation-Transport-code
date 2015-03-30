@@ -7,7 +7,7 @@
 
 c***** Parameter declarations ****************************************
       integer nphotons,iseed,j,xcell,ycell,zcell,tflag,i,ph1,ph2,ph3
-      integer cnt,q,qz,numberrun,sflag,pflag,rflag
+      integer cnt,q,qz,numberrun,sflag,pflag,rflag,io
       real*8 nscatt
       real kappa,albedo,hgg,xmax,ymax,zmax,zpos,th,d
       real pi,twopi,fourpi,g2,delta,ydect,xdect,rdect,dectang
@@ -18,7 +18,7 @@ c***** Parameter declarations ****************************************
       ! bin array for cartesian bins
 c      real, allocatable :: Amat(:,:,:)
       ! bin arrays for cylindrical bins
-      real, allocatable :: Amat(:,:),Az(:),Rr(:),Tr(:)
+      real, allocatable :: Amat(:,:),Az(:),Rr(:),Tr(:),noise(:,:)
       real ran2,start,finish
       
 c**** Read in parameters from the file input.params
@@ -42,7 +42,27 @@ c**** Read in parameters from the file input.params
           
           kappa=mua+mus
           albedo=mus/kappa
+            
+          open(32,file='noisesmooth.dat')
+          do 
+            read(32,*,IOSTAT=io)
 
+          if (io < 0) then
+            close(32)
+            ! allocates the arrays and inits the variables
+            allocate(noise(1:cnt,1:cnt))
+            noise = 0.0
+            exit
+          else 
+            cnt = cnt + 1
+          end if
+          end do
+          open(33,file='noise.dat')
+          do i=1,cnt
+            read(33,*) (noise(i,j),j=1,cnt)
+          end do
+          close(33)
+          
 c***** Set up bins ***************************************************
   
 !      abins=100
@@ -66,7 +86,7 @@ c***** Set up bins ***************************************************
 
       ! set # of bins for radial and vert direction
       zbins=500
-      rbins=500
+      rbins=100
       ! set size of bins
       ddz=((2.)/zbins)
       ddr=((2.*zmax)/rbins) 
@@ -129,12 +149,12 @@ c***** Release photon from point source and drop weight if mismatched boundry **
 
             pflag=1
 
-      call fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,rflag
+      call fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,tflag
      +            ,iseed,n1,n2,xp,yp,zp,xcur,ycur,Rr,ddr,weight
-     +            ,xmax,ymax,zmax,zcur,rbins,Tr)
+     +       ,xmax,ymax,zmax,zcur,rbins,Tr,sflag,rflag,noise,cnt)
 
 c****** Find scattering location
-          call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
+          call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr,cnt
      +              ,kappa,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
      +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
      +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
@@ -227,7 +247,7 @@ c************ drop weight
                 endif
 
 c************ Find next scattering location
-             call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
+             call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr,cnt
      +              ,kappa,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
      +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
      +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
@@ -256,22 +276,21 @@ c      open(13,file='numphotons.dat',status='unknown')
 c    write(13,*) ph1
 c      close(13)
 c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence through media
-!      do q = 1,20
-!            write(fn,"(i0,a)") q, '.dat'
-!            open(12,file=fn)
-!c            open(12,file='density.dat',status='unknown')
-!            do i = 1,201
-!            write(12,*) (jmean(i,j,qz),j=1,201)
-!            end do
-!            qz=qz-5
-!           
-!            close(12)
-!      end do
+      do q = 1,20
+            write(fn,"(i0,a)") q, '.dat'
+            open(12,file=fn)
+            do i = 1,201
+            write(12,*) (jmean(i,qz,j),j=1,201)
+            end do
+            qz=qz-10
+           
+            close(12)
+      end do
 
-!       open(25,file="absorb.dat")
-!       do i=0,rbins-1
-!       write(25,*) (Amat(i,j),j=0,zbins)
-!       end do
+       open(25,file="absorb.dat")
+       do i=0,rbins-1
+       write(25,*) (Amat(i,j),j=0,zbins)
+       end do
        open(26,file='fres-same-sur1.dat')
        do i=0,zbins
             do j=0,rbins-1
@@ -286,7 +305,7 @@ c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence 
 !            close(25)
             
             open(18,file="rr.dat")
-            open(19,file="Tr1.dat")
+            open(19,file="Tr.dat")
        do i=0,rbins-1
             write(18,*) i,Rr(i)/(numberrun*twopi*ddr*ddr*(i+.5))
             write(19,*) i,Tr(i)/(numberrun*twopi*ddr*ddr*(i+.5))
@@ -302,6 +321,6 @@ c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence 
             close(18)
             close(19)
 
-            deallocate(Amat,Az,Rr,Tr)
+            deallocate(Amat,Az,Rr,Tr,noise)
       stop
       end

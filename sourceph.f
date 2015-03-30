@@ -15,14 +15,14 @@
 !      zp=zmax-1E-7
 !      w=0.2
 c***** emit photon from a circle on the surface of skin
-c      xp=xmax+1.
-c      yp=ymax+1.
-c      zp=zmax-(1E-3)
-c      w=0.2             !radius of light illumination
-c      do while((xp**2+yp**2).gt.w**2)
-c            xp=(2*ran2(iseed)-1.)*w
-c            yp=(2*ran2(iseed)-1.)*w
-c      end do
+!      xp=xmax+1.
+!      yp=ymax+1.
+!      zp=zmax-(1E-3)
+!      w=0.1             !radius of light illumination
+!      do while((xp**2+yp**2).gt.w**2)
+!            xp=(2*ran2(iseed)-1.)*w
+!            yp=(2*ran2(iseed)-1.)*w
+!      end do
 
 c      phi=0.
 c      cosp=1.
@@ -40,7 +40,7 @@ c**** emit photons in a pencil beam
 
       xp=0.
       yp=0.
-      zp=zmax-1.E-7
+      zp=zmax-1.0E-7
 
 c***** Set photon direction cosines for direction of travel(into skin) *********
 

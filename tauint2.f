@@ -1,4 +1,4 @@
-      subroutine tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
+      subroutine tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr,cnt
      +              ,kappa,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
      +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
      +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
@@ -10,10 +10,10 @@
 
       integer tflag,iseed,xcell,ycell,zcell,ph1,ph2,ph3,sflag,numberrun
       real xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,phi,ddr,Rr(0:rbins-1)
-      real xpos,ypos,zpos,tpos,n1,n2,sint,cost,weight
+      real xpos,ypos,zpos,tpos,n1,n2,sint,cost,weight,noise(1:cnt,1:cnt)
       real ran2,pi,twopi,kappa,taue
 
-      integer celli,cellj,cellk,rbins,rflag,pflag
+      integer celli,cellj,cellk,rbins,rflag,pflag,cnt
       real tau,taurun,taucell,d,d1,dcell,xcur,ycur,zcur,dsx,dsy,dsz
       real dx,dy,dz,smax,delta,ydect,xdect,rdect,dectang,th,cosp,sinp
       real Tr(0:rbins-1)
@@ -25,6 +25,7 @@ c***** tflag=0 means photon is in envelope
       if(pflag.eq.1) then
       taue=kappa*2.*zmax
       tau=-log(1-ran2(iseed)*(1-exp(-taue)))
+      pflag=0
       else
       
 
@@ -96,6 +97,7 @@ c*****the direction of travel to the next x-face, and likewise for dy and dz.
          elseif(nxp.lt.0.) then
             dx=(xface(celli)-xcur)/nxp
             if(dx.lt.delta) then
+                  if(celli.lt.2)celli=2
                xcur=xface(celli)
                dx=(xface(celli-1)-xcur)/nxp
                celli=celli-1
@@ -171,6 +173,10 @@ c***** find distance to next cell wall -- minimum of dx, dy, and dz
 
 c***** optical depth to next cell wall is 
 c***** taucell= (distance to cell)*(opacity of current cell)
+            if(cellk.gt.204)then
+            print *,'cellk=204'
+            cellk=204
+            end if
          taucell=dcell*rhokap(celli,cellj,cellk)
 
 c***** if taurun+taucell>tau then scatter at distance d+d1.  
@@ -219,28 +225,30 @@ c***** photon position.
           if((ycur.ge..9999999*2.*ymax).or.(ycur.le.1.0E-7)) tflag=1
 !          if(zcur.le.1.0E-7) tflag=1
           if((zcur.ge..9999999*2.*zmax).or.zcur.le.1.0E-7) then
-         call fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,rflag
+         call fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,tflag
      +            ,iseed,n1,n2,xp,yp,zp,xcur,ycur,Rr,ddr,weight
-     +            ,xmax,ymax,zmax,zcur,rbins,Tr)
+     +       ,xmax,ymax,zmax,zcur,rbins,Tr,sflag,rflag,noise,cnt)
 
-            if(rflag.eq.1) then
-              xp=xcur-xmax
-              yp=ycur-ymax
-              zp=zcur-zmax
 
-              cost=cos(pi-asin(sint)) ! reflect photon
-              sint=(1.-cost*cost)
-              if(sint.le.0.)then
-                sint=0.
-              else
-                sint=sqrt(sint)
-              endif
-              nxp=sint*cosp  
-              nyp=sint*sinp
-              nzp=cost
+
+!            if(rflag.eq.1) then
+!              xp=xcur-xmax
+!              yp=ycur-ymax
+!              zp=zcur-zmax
+
+!              cost=cos(pi-asin(sint)) ! reflect photon
+!              sint=(1.-cost*cost)
+!              if(sint.le.0.)then
+!                sint=0.
+!              else
+!                sint=sqrt(sint)
+!              endif
+!              nxp=sint*cosp  
+!              nyp=sint*sinp
+!              nzp=cost
 
               goto 345
-            endif
+!            endif
             
           else
                   tflag=1
