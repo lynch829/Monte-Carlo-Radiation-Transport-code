@@ -1,31 +1,33 @@
       subroutine tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr,cnt
-     +              ,kappa,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
-     +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
-     +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
-     +            weight,sint,n2,n1,cost,sflag,xcur,ycur,zcur,cosp,sinp)
+     +        ,Amat1,kappa,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
+     + Amat2,ddx,ddy,twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
+     + ybins,jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,Amat,
+     +  xbins,weight,sint,n2,n1,cost,sflag,xcur,ycur,zcur,cosp,sinp,o)
 
       implicit none
 
       include 'grid.txt'
 
       integer tflag,iseed,xcell,ycell,zcell,ph1,ph2,ph3,sflag,numberrun
-      real xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,phi,ddr,Rr(0:rbins-1)
-      real xpos,ypos,zpos,tpos,n1,n2,sint,cost,weight,noise(1:cnt,1:cnt)
-      real ran2,pi,twopi,kappa,taue
+      integer xbins,ybins,o
+      real*8 xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,phi,ddr,Rr(0:rbins-1)
+      real*8 xpos,ypos,zpos,tpos,n1,n2,sint,cost,weight,ddx,ddy
+      real*8 pi,twopi,kappa,taue,noise(1:cnt,1:cnt)
 
       integer celli,cellj,cellk,rbins,rflag,pflag,cnt
-      real tau,taurun,taucell,d,d1,dcell,xcur,ycur,zcur,dsx,dsy,dsz
-      real dx,dy,dz,smax,delta,ydect,xdect,rdect,dectang,th,cosp,sinp
-      real Tr(0:rbins-1)
+      real*8 tau,taurun,taucell,d,d1,dcell,xcur,ycur,zcur,dsx,dsy,dsz
+      real*8 dx,dy,dz,smax,delta,ydect,xdect,rdect,dectang,th,cosp,sinp
+      real*8 Tr(0:rbins-1),Amat(0:xbins,0:ybins),Amat1(0:xbins,0:ybins)
+      real*8 Amat2(0:xbins,0:ybins)
+      real ran2
 c      real jmean(nxg,nyg,nzg)
-
 c***** tflag=0 means photon is in envelope
       tflag=0
       
       if(pflag.eq.1) then
       taue=kappa*2.*zmax
       tau=-log(1-ran2(iseed)*(1-exp(-taue)))
-      pflag=0
+
       else
       
 
@@ -225,9 +227,10 @@ c***** photon position.
           if((ycur.ge..9999999*2.*ymax).or.(ycur.le.1.0E-7)) tflag=1
 !          if(zcur.le.1.0E-7) tflag=1
           if((zcur.ge..9999999*2.*zmax).or.zcur.le.1.0E-7) then
-         call fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,tflag
-     +            ,iseed,n1,n2,xp,yp,zp,xcur,ycur,Rr,ddr,weight
-     +       ,xmax,ymax,zmax,zcur,rbins,Tr,sflag,rflag,noise,cnt)
+         call fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,tflag,
+     + Amat,ybins,iseed,n1,n2,xp,yp,zp,xcur,ycur,Rr,ddr,weight,
+     + xbins,xmax,ymax,zmax,zcur,rbins,Tr,sflag,rflag,noise,cnt
+     + ,ddx,ddy,Amat1,o,Amat2)
 
 
 

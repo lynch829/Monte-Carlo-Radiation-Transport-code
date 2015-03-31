@@ -7,8 +7,8 @@
       include 'photon.txt'
 
       integer xcell,ycell,zcell,nxg,nyg,nzg,iseed
-      real xmax,ymax,zmax,twopi,w,phigauss,r1
-      real ran
+      real*8 xmax,ymax,zmax,twopi,w,phigauss,r1
+      real*8 ran
       real ran2
 
 
@@ -38,9 +38,15 @@ c**** emit photon from a gaussian beam on surface of skin
 
 c**** emit photons in a pencil beam 
 
-      xp=0.
-      yp=0.
-      zp=zmax-1.0E-7
+!      xp=0.
+!      yp=0.
+!      zp=zmax-1.0E-7
+
+c**** emit uniformly across surface
+
+      zp=zmax
+      xp=2.*xmax*ran2(iseed)-xmax
+      yp=2.*ymax*ran2(iseed)-ymax
 
 c***** Set photon direction cosines for direction of travel(into skin) *********
 
