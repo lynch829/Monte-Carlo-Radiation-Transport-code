@@ -1,7 +1,7 @@
 #*************** Makefile created by Mike Wolff ****************************
 
 #******************************** G77/Linux Fortran ************************
-FC     =       gfortran-4.8  -fbounds-check
+FC     =       gfortran-4.8  -fbounds-check  
 #EXTRA_OPT =     -mpentium -malign-double -fforce-mem -fforce-addr \
 #                -ffast-math -funroll-all-loops
 # May want to experiment by adding the extra optimization flags to get
