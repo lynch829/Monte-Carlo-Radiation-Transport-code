@@ -2,8 +2,8 @@
             implicit none
 
             integer nup,nlow,cnt,middle,iseed
-            real*8  ran,ran2
-            real*8 cdf(cnt-1)
+            real  ran,ran2
+            real cdf(cnt-1)
             
 
 c search by bisection algorithm. finds bracketing indice nlow and nlow+1 that bracket a random number in the cdf

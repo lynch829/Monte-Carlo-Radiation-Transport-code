@@ -139,7 +139,7 @@ c      elseif(ri1.le.pi) then
 
       cosp=cos(phi)
       sinp=sin(phi)
-      if(cost.lt.-1.) cost=-1.
+
       nxp=sint*cosp
       nyp=sint*sinp
       nzp=cost
