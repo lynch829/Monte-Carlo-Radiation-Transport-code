@@ -3,7 +3,7 @@
             3D SCATTERED LIGHT CODE
             --------------------------------------
 
-This Git contains the source codes for the 3D Cartesian grid. The code can be set up to simulate emission from an isotropic point source, gaussian beam, pencil beam, and uniform irradiation. The density structure is set to be a uniform density discretised into the 3D grid. The code outputs the 3D density grid as an unformatted file. Various features are present in the code, such as: Frsenel reflections, photon weight and russian roulette system[L.Wang et al. 1995], support for semi infinte media and rough surfaces(currently in development).
+This Git contains the source codes for the 3D Cartesian grid. The code can be set up to simulate emission from an isotropic point source, gaussian beam, pencil beam, and uniform irradiation. The density structure is set to be a uniform density discretised into the 3D grid. The code outputs the 3D density grid as an unformatted file. Various features are present in the code, such as: Frsenel reflections, photon weight and russian roulette system[L.Wang *et al.* 1995], support for semi infinte media and rough surfaces(currently in development).
 
 At the end of the simulation the code outputs to the screen the average number of scatterings per Monte Carlo photon packet,total diffuse reflectance and total transmission. Other ouputs are the depth resolved fluence, Diffuse reflectance as afunction of radius, total trasmission as function of radius and various slices through the media of fluence.
 
