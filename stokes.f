@@ -4,12 +4,12 @@
       implicit none
 
       integer iseed
-      real nxp,nyp,nzp,sint,cost,sinp,cosp,phi
-      real hgg,g2,pi,twopi
+      real*8 nxp,nyp,nzp,sint,cost,sinp,cosp,phi
+      real*8 hgg,g2,pi,twopi
 
-      real costp,sintp,phip
-      real bmu,b,ri1,ri3,cosi3,sini3,cosb2,sinbt,sini2,bott,cosdph
-      real cosi2,sini1,cosi1
+      real*8 costp,sintp,phip
+      real*8 bmu,b,ri1,ri3,cosi3,sini3,cosb2,sinbt,sini2,bott,cosdph
+      real*8 cosi2,sini1,cosi1
 
       real ran2
 
@@ -139,7 +139,7 @@ c      elseif(ri1.le.pi) then
 
       cosp=cos(phi)
       sinp=sin(phi)
-      if(cost.lt.-1.) cost=-1.
+
       nxp=sint*cosp
       nyp=sint*sinp
       nzp=cost

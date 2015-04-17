@@ -4,10 +4,10 @@
 
       include 'grid.txt'
 
-      real xmax,ymax,zmax,kappa
+      real*8 xmax,ymax,zmax,kappa
 
       integer i,j,k
-      real x,y,z,rho,taueq,taupole
+      real*8 x,y,z,rho,taueq,taupole
 
       print *, 'Setting up density grid....'
 

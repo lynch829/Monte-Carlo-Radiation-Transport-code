@@ -2,9 +2,9 @@
 
       implicit none
 
-      real x,y,z,rho
+      real*8 x,y,z,rho
 
-      real w,w2,r,r2
+      real*8 w,w2,r,r2
 
 c***** calculate some distances for use in setting up density 
 c***** structure. Note that distances are in units of xmax, ymax, and zmax 

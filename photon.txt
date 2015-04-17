@@ -1,1 +1,1 @@
-      real xp,yp,zp,nxp,nyp,nzp,sint,cost,sinp,cosp,phi
+      real*8 xp,yp,zp,nxp,nyp,nzp,sint,cost,sinp,cosp,phi

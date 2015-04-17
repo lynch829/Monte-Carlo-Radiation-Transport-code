@@ -5,3 +5,5 @@
 mcgrid
 pics/
 cvi data/
+*.ppm
+noise

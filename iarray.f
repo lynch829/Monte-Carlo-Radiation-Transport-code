@@ -24,13 +24,7 @@ c**** Initialize array values to be zero
           end do
       end do
 
-      do i=1,nxg
-         do j=1,nyg
-            do k=1,nzg
-               jmean(i,j,k)=0.
-            end do
-          end do
-      end do
+      jmean=0.
 
       return
       end

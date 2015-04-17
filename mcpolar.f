@@ -6,19 +6,18 @@
       include 'photon.txt'
 
 c***** Parameter declarations ****************************************
-      integer nphotons,iseed,j,xcell,ycell,zcell,tflag,i,ph1,ph2,ph3
-      integer cnt,q,qz,numberrun,sflag
-      real*8 nscatt
-      real kappa,albedo,hgg,xmax,ymax,zmax,zpos,th,d
-      real pi,twopi,fourpi,g2,delta,ydect,xdect,rdect,dectang
-      real chance,terminate,weight,absorb,n1,n2,mua,mus,xcur,ycur,zcur
+      integer nphotons,iseed,j,xcell,ycell,zcell,tflag,i
+      integer cnt,q,qz,numberrun,sflag,pflag,abins,io
+      real*8 kappa,albedo,hgg,xmax,ymax,zmax,pi,twopi,fourpi,g2,delta
+      real*8 chance,terminate,weight,absorb,n1,n2,mua,mus,xcur,ycur,zcur
       character(len=70) :: fn
       integer ix,iy,iz,xbins,ybins,zbins,rbins,ir
-      real ddz,ddx,ddy,ddr,r
+      real*8 ddz,ddx,ddy,ddr,r,dda,dalpha,domega,nscatt,rd,td
       ! bin array for cartesian bins
 c      real, allocatable :: Amat(:,:,:)
       ! bin arrays for cylindrical bins
-      real, allocatable :: Amat(:,:),Az(:),Rr(:),Tr(:)
+      real*8, allocatable :: Amat(:,:),Az(:),Rr(:),Tr(:),td_ang(:,:)
+      real*8, allocatable ::rrang(:),rd_ang(:,:),angular(:),noise(:,:)
       real ran2,start,finish
       
 c**** Read in parameters from the file input.params
@@ -33,21 +32,33 @@ c**** Read in parameters from the file input.params
           read(10,*) xmax
           read(10,*) ymax
           read(10,*) zmax
-          read(10,*) ydect
-          read(10,*) xdect
-          read(10,*) rdect
-          read(10,*) zpos
-          read(10,*) dectang
           close(10)
           
           kappa=mua+mus
           albedo=mus/kappa
+          
+c***** read in noise file and get size then allocate noise array based on size of file
+          open(32,file='noisesmooth.dat')
+          do 
+            read(32,*,IOSTAT=io)
+
+          if (io < 0) then
+            close(32)
+            ! allocates the arrays and inits the variables
+            allocate(noise(1:cnt,1:cnt))
+            noise = 0.0
+            exit
+          else 
+            cnt = cnt + 1
+          end if
+          end do
+          open(33,file='noisesmooth.dat')
+          do i=1,cnt
+            read(33,*) (noise(i,j),j=1,cnt)
+          end do
+          close(33)
 
 c***** Set up bins ***************************************************
-  
-!      abins=100
-!      dda=int((pi/(2.*abins)))
-
 
 !      **** Cartesian Bins *****
 
@@ -65,7 +76,7 @@ c***** Set up bins ***************************************************
 !      **** Cylindrical bins ****
 
       ! set # of bins for radial and vert direction
-      zbins=100
+      zbins=204
       rbins=500
       ! set size of bins
       ddz=((2.*zmax)/zbins)
@@ -82,24 +93,32 @@ c***** Set up bins ***************************************************
       Az=0.
       Rr=0.
       Tr=0.
+
       
 c***** Set up constants, pi and 2*pi  ********************************
       pi=4.*atan(1.)
       twopi=2.*pi
       fourpi=4.*pi
-      ph1 = 0
-      ph2 = 0
-      ph3 = 0
       ! set terminate and chance values for roulette sub-routine
-      terminate=0.00001
+      terminate=0.0001
       chance=0.1
       ! set number of photons run to 0
       numberrun=0
       iseed=-abs(iseed)  ! Random number seed must be negative for ran2
-      ! set detector angle into radians
-      dectang=(dectang*pi)/180.
       g2=hgg*hgg  ! Henyey-Greenstein parameter, hgg^2
 
+!      **** Angle bins ****    
+   
+      abins=30
+!      dda=(pi/2.)/abins
+      dda=((pi/2.)/abins)
+      allocate(td_ang(0:rbins-1,0:abins),rrang(0:rbins-1))
+      allocate(rd_ang(0:rbins-1,0:abins),angular(0:abins-1))
+      td_ang=0.
+      rd_ang=0.
+      rrang=0.
+      angular=0.
+    
 c**** Initialize arrays to zero *************************************
       call iarray(xface,yface,zface,rhokap,jmean)
 
@@ -126,36 +145,39 @@ c***** Release photon from point source and drop weight if mismatched boundry **
           call sourceph(xp,yp,zp,nxp,nyp,nzp,sint,
      +          cost,sinp,cosp,phi,xmax,ymax,zmax,twopi,
      +            xcell,ycell,zcell,nxg,nyg,nzg,iseed)
+            xcur=xp+xmax
+            ycur=yp+ymax
+            zcur=zp+zmax
+            pflag=0
 
-      call fresnel(sflag,sint,cost,n1,n2,zcur,
-     & ddr,ycur,weight,xmax,ymax,zmax,xp,yp,zp,xcur,
-     & Rr,rbins,Tr,twopi,tflag,sinp,cosp)
+      call fresnel(sint,cost,sinp,cosp,nxp,nyp,nzp,tflag,
+     + iseed,n1,n2,xp,yp,zp,xcur,ycur,Rr,ddr,weight,dda,noise,
+     + rd_ang,xmax,ymax,zmax,zcur,rbins,Tr,sflag,td_ang,abins
+     + ,cnt)
 
 c****** Find scattering location
-          call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
-     +                  ,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
-     +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
-     +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
-     +            weight,sint,n2,n1,cost,sflag,xcur,ycur,zcur,cosp,sinp)
-     
+        call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr,kappa
+     + ,pflag,xface,yface,zface,rhokap,phi,pi,zbins,twopi,
+     + xcell,ycell,zcell,tflag,iseed,delta,rbins,Amat,jmean,numberrun
+     + ,weight,sint,n2,n1,cost,sflag,xcur,ycur,cosp,sinp,abins,td_ang
+     + ,dda,rd_ang,ddr,zcur,noise,cnt)
+
 c******** Photon scatters in grid until it exits (tflag=1) 
 
           do while(tflag.eq.0)
-                 if( (ran2(iseed).lt.albedo) ) then
-                 
+                                  
 c************ drop weight
 
-                  absorb=weight*(1-albedo)
-                  weight=weight-absorb
+                  absorb=weight*(mua/kappa)
+                  weight=weight*albedo
+!!                  ***** Cartesian bins *****
+!!                 ix=floor(xcur/ddx)+1
+!!                 iy=floor(ycur/ddy)+1
+!!                 if(iz.gt.zbins/2) iz=zbins/2 
+!!                 if(iy.gt.ybins/2) iy=ybins/2
+!!                 Amat(ix,iy,iz)=Amat(ix,iy,iz)+absorb
 
-!                  ***** Cartesian bins *****
-!                 ix=floor(xcur/ddx)+1
-!                 iy=floor(ycur/ddy)+1
-!                 if(iz.gt.zbins/2) iz=zbins/2 
-!                 if(iy.gt.ybins/2) iy=ybins/2
-!                 Amat(ix,iy,iz)=Amat(ix,iy,iz)+absorb
-
-!                 ***** Cylindrical bins *****
+!!                 ***** Cylindrical bins *****
                   r=sqrt(xp**2+yp**2)
                   ir=floor(r/ddr)
                   iz=floor(zcur/ddz)
@@ -170,15 +192,12 @@ c************ Scatter photon into new direction and update Stokes parameters
      +                  hgg,g2,pi,twopi,iseed)
      
 c************ uses russian roulette to kill off photons
-
-                   if(weight.lt.terminate)then
+                   if(weight.le.terminate)then
                         if(ran2(iseed).le.chance)then
                               weight=weight/chance
                         else
-                        
                   absorb=weight
-                  weight=weight-absorb
-
+                  weight=0.
 !                  ***** Cartesian bins *****
 !                 ix=floor(xcur/ddx)+1
 !                 iy=floor(ycur/ddy)+1
@@ -198,79 +217,63 @@ c************ uses russian roulette to kill off photons
                         endif
                    endif
                    nscatt=nscatt+1
-                else
                
-c************ drop weight 
-
-                  absorb=weight*(1-albedo)
-                  weight=weight-absorb
-
-!                  ***** Cartesian bins *****
-!                 ix=floor(xcur/ddx)+1
-!                 iy=floor(ycur/ddy)+1
-!                 if(iz.gt.zbins/2) iz=zbins/2 
-!                 if(iy.gt.ybins/2) iy=ybins/2
-!                 Amat(ix,iy,iz)=Amat(ix,iy,iz)+absorb
-
-!                 ***** Cylindrical bins *****
-                  r=sqrt(xp**2+yp**2)
-                  ir=floor(r/ddr)
-                  iz=floor(zcur/ddz)
-                  if(iz.gt.zbins) iz=zbins
-                  if(iz.lt.0) iz=0
-                  if(ir.gt.rbins-1) ir=rbins-1
-                  Amat(ir,iz)=Amat(ir,iz)+absorb
-                  
-                   goto 100
-                endif
-
 c************ Find next scattering location
-             call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr
-     +                  ,xface,yface,zface,rhokap,zpos,phi,dectang,pi,
-     +               twopi,xcell,ycell,zcell,tflag,iseed,delta,th,rbins,
-     +                jmean,ph1,ph2,ph3,ydect,xdect,rdect,ddr,numberrun,
-     +            weight,sint,n2,n1,cost,sflag,xcur,ycur,zcur,cosp,sinp)
+           call tauint2(xp,yp,zp,nxp,nyp,nzp,xmax,ymax,zmax,Rr,Tr,kappa
+     + ,pflag,xface,yface,zface,rhokap,phi,pi,zbins,twopi,
+     + xcell,ycell,zcell,tflag,iseed,delta,rbins,Amat,jmean,numberrun
+     + ,weight,sint,n2,n1,cost,sflag,xcur,ycur,cosp,sinp,abins,td_ang
+     + ,dda,rd_ang,ddr,zcur,noise,cnt)
 
       
           end do
 100      continue
+        if(xcur.lt.1E-8.or.xcur.gt.2.*xmax) print *, 'Error xcur:',xcur
+        if(ycur.lt.1E-8.or.ycur.gt.2.*ymax) print *, 'Error ycur:',ycur
+!         if(zcur.le.1E-8)print *, numberrun,zcur,cost
             numberrun=numberrun+1
         end do      ! end loop over nph photons
         print *, numberrun,' scattered photons completed'
             call cpu_time(finish)
+            if(finish-start.ge.60.)then
             print*,floor((finish-start)/60.)+mod(finish-start,60.)/100.
-      
-
-      jmean=jmean*((pi*0.2**2)/(nphotons*((2*xmax)**3/(201**2))))
+            else
+            print*, 'time taken ~',floor(finish-start/60.),'s'
+            end if
+      jmean=jmean*((nxg**3)/(xmax*ymax*zmax*numberrun))
       print*, ' '  
-      print*,'For detector at',xdect,ydect,zpos
-      print *,'with radius',rdect
-      print *,'Detects',ph1,'photons'
-      print *, '',ph2
-      print*,'Avereage number of scatterings = ',sngl(nscatt/nphotons)
-      
-      qz=201
-c      open(13,file='numphotons.dat',status='unknown')
-c    write(13,*) ph1
-c      close(13)
-c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence through media
-!      do q = 1,20
-!            write(fn,"(i0,a)") q, '.dat'
-!            open(12,file=fn)
-!c            open(12,file='density.dat',status='unknown')
-!            do i = 1,201
-!            write(12,*) (jmean(i,j,qz),j=1,201)
-!            end do
-!            qz=qz-5
-!           
-!            close(12)
-!      end do
 
-!       open(25,file="absorb.dat")
-!       do i=0,rbins-1
-!       write(25,*) (Amat(i,j),j=0,zbins)
+      print*,'Avereage number of scatterings = ',sngl(nscatt/nphotons)
+c******* Fluence normalisation and output
+      qz=130
+c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence through media
+      do q = 1,20
+            write(fn,"(i0,a)") q, '.dat'
+            open(12,file=fn)
+c            open(12,file='density.dat',status='unknown')
+            do i = 1,201
+            write(12,*) (jmean(i,qz,j),j=1,201)
+            end do
+            qz=qz-3
+           
+            close(12)
+      end do
+! path length fluence normaiastion and outputs it
+!       open(25,file="jmean.dat")
+!       do i=1,204
+!            do j=1,zbins
+!                  Az(i)=Az(i)+jmean(j,i)
+!            end do
 !       end do
-       open(26,file='fres-same-sur.dat')
+!       az=2.*az*(0.1*0.01*mua)
+!       do i=1,204	
+!       write(25,*) Az(i)
+!       end do
+!       close(25)
+
+
+! normalises fluence and outputs it.
+       open(26,file='flunoise.dat')
        do i=0,zbins
             do j=0,rbins-1
                   Az(i)=Az(i)+Amat(j,i)
@@ -281,18 +284,86 @@ c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence 
             write(26,*) Az(i)
        end do
             close(26)
-!            close(25)
-            
-            open(18,file="rr.dat")
-            open(19,file="Tr1.dat")
+
+
+c******** loops to normalise reflectance and transmittance arrays *****
+! for Td_a
+       open(49,file='td_a.dat')
+       do i=0,abins-1
+            do j=0,rbins-1
+                 dalpha=twopi*(j+0.5)*ddr*ddr
+                 domega=fourpi*sin(((i+0.5)*dalpha))*sin(dalpha/2.)
+                 if(j.eq.0)domega=twopi*sin(pi/120.)*(pi/60.)
+                  angular(i)=angular(i)+(td_ang(j,i)/abs(domega))
+            end do
+       end do
+       do i=0,abins-1
+!            dalpha=twopi*(i+0.5)*ddr*ddr
+!            domega=twopi*sin(((i+0.5)*dalpha))*sin(dalpha/2.) 
+!            domega=1.
+            write(49,*) angular(i)/(numberrun)
+       end do
+       close(49)
+       angular=0.
+       
+       ! for Rd_a
+
+       open(50,file='rd_a.dat')
+       do i=0,abins-1
+            do j=0,rbins-1
+             dalpha=twopi*(j+0.5)*ddr*ddr
+            domega=fourpi*sin(((i+0.5)*dalpha))*sin(dalpha/2.)
+            if(j.eq.0)domega=twopi*sin(pi/120.)*(pi/60.)
+                  angular(i)=angular(i)+(rd_ang(j,i)/abs(domega))
+            end do
+       end do
+       do i=0,abins-1
+!            dalpha=twopi*(i+0.5)*ddr*ddr
+!            domega=fourpi*sin(((i+0.5)*dalpha))*sin(dalpha/2.)
+!            domega=1. 
+            write(50,*) angular(i)/(numberrun)
+       end do
+       close(50)
+       rrang=0.
+       
+c********** total Rd and Td *******************
        do i=0,rbins-1
-            write(18,*) i,Rr(i)/(numberrun*twopi*ddr*ddr*(i+.5))
-            write(19,*) i,Tr(i)/(numberrun*twopi*ddr*ddr*(i+.5))
+            do j=0,abins-1
+                  rrang(i)=rrang(i)+rd_ang(i,j)
+            end do
+       end do
+       do i=0,rbins-1
+            rd=rd+rrang(i)
+       end do
+       rrang=0.
+       
+       do i=0,rbins-1
+            do j=0,abins-1
+                  rrang(i)=rrang(i)+td_ang(i,j)
+            end do
+       end do
+       do i=0,rbins-1
+            td=td+rrang(i)
+       end do
+       print *, 'Total diffuse reflectance:',rd/numberrun
+       print *, 'Total transmitance:',td/numberrun
+       
+            !for transmittance and reflectance radially dept.
+            open(18,file="rr.dat")
+            open(19,file="Tr3.dat")
+       do i=0,rbins-1
+!       print *, ((i+.5)+(1/(12*(i+0.5))))
+            write(18,*) i,(Rr(i)/(numberrun*twopi*ddr*ddr*(
+     +           (i+.5))))
+            write(19,*) i,(Tr(i)/(numberrun*twopi*ddr*ddr*(
+     +           (i+.5))))
             if(i.eq.rbins-1) then
                   j=rbins-1
             do while(j.ge.0)
-            write(18,*) -j,Rr(j)/(numberrun*twopi*ddr*ddr*(j+.5))
-            write(19,*) -j,Tr(j)/(numberrun*twopi*ddr*ddr*(j+.5))
+            write(18,*) -j,(Rr(j)/(numberrun*twopi*ddr*ddr*(
+     +           (j+.5))))
+            write(19,*) -j,(Tr(j)/(numberrun*twopi*ddr*ddr*(
+     +           (j+.5))))
                   j=j-1
             end do
             end if
@@ -300,6 +371,6 @@ c******** writes out 20 slices so that a gif(using GIMP) can be made of fluence 
             close(18)
             close(19)
 
-            deallocate(Amat,Az,Rr,Tr)
+            deallocate(Amat,Az,Rr,Tr,rrang,td_ang,rd_ang,angular)
       stop
       end
