@@ -33,4 +33,4 @@ The file that compiles the code and creates the executable file 'mcgrid' is:
 	Makefile
 
 
-Wang, Lihong, Steven L. Jacques, and Liqiong Zheng. "MCML—Monte Carlo modeling of light transport in multi-layered tissues." Computer methods and programs in biomedicine 47.2 (1995): 131-146.
+<sup>Wang, Lihong, Steven L. Jacques, and Liqiong Zheng. "MCML—Monte Carlo modeling of light transport in multi-layered tissues." Computer methods and programs in biomedicine 47.2 (1995): 131-146.</sup>
